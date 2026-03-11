@@ -1,5 +1,10 @@
 # Compiled class file
 *.class
+bin/
+out/
+.idea/
+.vscode/
+.DS_Store
 
 # Log file
 *.log
