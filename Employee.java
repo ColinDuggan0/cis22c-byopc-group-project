@@ -22,14 +22,15 @@ public class Employee extends User {
 
     //other methods
     public String toString() {
-        result = super.toString();
+        String result = super.toString();
         String manager = "";
         if (isManager == true) {
             result += "Manager: yes";
         } else {
             result += " Manager: no"
         }
-    
+
+        return result;
     }
 
 

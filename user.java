@@ -59,6 +59,20 @@ public abstract class User {
             + "email: " + email; // no password yet for security
     }
 
+    @Override public boolean equals(Object obj) { // for hastable to check login
+        if (this == obj) {
+            return true;
+        } else if (!(obj instanceof User)) {
+            return false;
+        } else {
+            User user = (User) obj;
+            return email.equals(user.email); // check the email equal
+        }
+    }
+
+    @Override public int hashCode() { // override hasCode to hash email
+        return email.hasCode();
+    }
 
 
 }
