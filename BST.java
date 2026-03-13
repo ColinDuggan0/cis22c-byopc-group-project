@@ -1,6 +1,7 @@
 
 import java.util.Comparator;
 import java.util.NoSuchElementException;
+import java.util.function.Consumer;
 
 public class BST<T> {
    private class Node {
@@ -394,6 +395,27 @@ public class BST<T> {
          inOrderString(node.left, inOrder);
          inOrder.append(node.data + " ");
          inOrderString(node.right, inOrder);
+      }
+   }
+
+   /**
+    * Performs an in-order traversal and executes the visitor action on each node.
+    * @param visitor the action to run for each value
+    */
+   public void inOrderForEach(Consumer<T> visitor) {
+      inOrderForEach(root, visitor);
+   }
+
+   /**
+    * Recursive helper for inOrderForEach.
+    * @param node current node
+    * @param visitor action run for each value
+    */
+   private void inOrderForEach(Node node, Consumer<T> visitor) {
+      if (node != null) {
+         inOrderForEach(node.left, visitor);
+         visitor.accept(node.data);
+         inOrderForEach(node.right, visitor);
       }
    }
 
