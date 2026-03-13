@@ -27,7 +27,7 @@ public class Employee extends User {
         if (isManager == true) {
             result += "Manager: yes";
         } else {
-            result += " Manager: no"
+            result += " Manager: no";
         }
 
         return result;

@@ -71,7 +71,7 @@ public abstract class User {
     }
 
     @Override public int hashCode() { // override hasCode to hash email
-        return email.hasCode();
+        return email.hashCode();
     }
 
 
