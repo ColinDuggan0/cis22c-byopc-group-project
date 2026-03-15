@@ -11,6 +11,7 @@ public class Customer extends User {
 
         super(firstName, lastName, username, password);
         this.address = address;
+        this.city = city;
         this.state = state;
         this.zip = zip;
         

@@ -55,8 +55,8 @@ public abstract class User {
 
     @Override public String toString() {
         return "First Name: " +  firstName 
-            + "Last Name:  " + lastName 
-            + "Username: " + username; // no password yet for security
+            + "\nLast Name: " + lastName 
+            + "\nUsername: " + username; // no password yet for security
     }
 
     @Override public boolean equals(Object obj) { // for hastable to check login

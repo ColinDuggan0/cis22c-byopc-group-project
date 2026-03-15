@@ -1,44 +1,152 @@
+/** Main.java
+ * @author Felipa Mendez
+ * @author Peilian Song
+ */
 import java.util.Scanner;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
 
 
 public class Main {
-    public static void main(String[] args) {
-        String username;
-        String password;
+    public static void main(String[] args) throws IOException {
         HashTable<Customer> customers = new HashTable<>(10);
         HashTable<Employee> employees = new HashTable<>(10);
+        CatalogService catalog = new CatalogService();
+        //do we have to load the product file csv? ^^^
+        Heap<Order> orderHeap = new Heap<>(); // is this right?
+
 
         ///////////// USER LOGIN PRINT OUTS ////////////////
         //dummy users for testing
-        customers.add(new Customer("Alice", "Smith", "alice@email.com", "1234", 
+        customers.add(new Customer("Alicia", "Smith", "alicia@email.com", "1234", 
             "123 Main St", "San Jose", "CA", "95112"));
-        employees.add(new Employee("Bob", "Jones", "bob@email.com", "abcd", true));
+        employees.add(new Employee("Bobby", "Jones", "bobby@email.com", "abcd", true));
+
+        //seeding users_upload.txt file
+        Scanner file = new Scanner(new File("users_upload.txt"));
+
+        //USER SCAN
+        while(file.hasNext()) {
+            String first = file.next();
+
+            // stop if we reach emoloyees section
+            if (first.equals("EMPLOYEES")) {
+                break;
+            }
+
+            String last = file.next();
+            String username = file.next();
+            String password = file.next();
+            String address = file.next();
+            String city = file.next();
+            String state = file.next();
+            String zip = file.next();
+
+            Customer c = new Customer(first, last, username, password, address, city, state, zip);
+
+            customers.add(c);
+
+        } 
+
+        //EMPLOYEE SCAN
+        while (file.hasNext()) {
+
+            String first = file.next();
+
+            // stop if we reach orders
+            if (first.equals("ORDERS")) {
+                break;
+            }
+
+            String last = file.next();
+            String email = file.next();
+            String password = file.next();
+            boolean manager = file.nextBoolean();
+
+            Employee e = new Employee(first, last, email, password, manager);
+
+            employees.add(e);
+        }
+
+        //ORDER SCAN
+        while (file.hasNext()) {
+
+            int orderId = file.nextInt();
+            String username = file.next();
+            int shippingSpeed = file.nextInt();
+
+            LinkedList<PCPart> items = new LinkedList<>();
+
+            // read product SKUs until end of line
+            String line = file.nextLine().trim();
+
+            if (!line.isEmpty()) {
+                Scanner skuScan = new Scanner(line);
+
+                while (skuScan.hasNext()) {
+
+                    String sku = skuScan.next();
+                    PCPart part = catalog.searchByPrimaryKey(sku); // is this right?
+
+                    items.addLast(part);
+                }
+
+                skuScan.close();
+            }
+
+            Customer temp = new Customer("", "", username, "", "", "", "", "");
+            Customer customer = customers.get(temp);
+
+            Order order = new Order(orderId, customer, items, shippingSpeed);
+
+            orderHeap.insert(order); // add to priority queue 
+        }
+
+        file.close(); // end file scan start new scaner
 
         Scanner input = new Scanner(System.in);
 
-        System.out.println("1. Login");
-        System.out.println("2. Create Account");
-        System.out.print("Enter choice: ");
+        int choice = 0;
 
-        int choice = input.nextInt();
-        input.nextLine();
+        while (choice != 4) { 
+            System.out.println("1. Login");
+            System.out.println("2. Create Account");
+            System.out.println("3. Continue as Guest");
+            System.out.println("4. Quit");
+            System.out.print("Enter choice: ");
 
-        //lets use 3 differend methods to separate the employee, guest, and customer menu options
-        //print out 3 files one for customer.txt, employee.txt, manager.txt or something
+            
+            choice = input.nextInt();
+            input.nextLine();
 
-        if (choice == 1) { 
-            login(customers, employees, input);
-        } else if (choice == 2) {
-            //create an account 
-            //make sure to add new account to file! - hashtable tostring - we will print the hashtable with printWriter
-            createAccount(customers, input);
-        } else if (choice == 3) {
-            System.out.println("\nLogged in as Guest.");
-            //guest menu options
+            //lets use 3 differend methods to separate the employee, guest, and customer menu options
+            //print out files one for customer.txt, employee.txt, manager.txt or something
+
+            if (choice == 1) { 
+                login(customers, employees, input);
+            } else if (choice == 2) { //create an account 
+                createAccount(customers, input);
+            } else if (choice == 3) { //guest menu options
+                System.out.println("\nLogged in as Guest.");
+                guestInterface();
+                
+            } else if (choice == 4) {
+                System.out.println("Exiting program...");
+
+            } else {
+                System.out.println("Invalid choice. Try again.");
+            }
+
         }
+
+        input.close();
 
     }
 
+    /** login
+     * 
+     */
     public static void login(HashTable<Customer> customers, HashTable<Employee> employees, Scanner input) {
 
         System.out.print("Enter username: ");
@@ -66,6 +174,9 @@ public class Main {
         }
     }
 
+    /** createAccount
+     * 
+     */
     public static void createAccount(HashTable<Customer> customerTable, Scanner input) {
 
         System.out.print("Enter Username: ");
@@ -87,8 +198,6 @@ public class Main {
             System.out.println("User already exists! Please login with " + username + ".");
             return;
         }
-        //should we check if the username alredy exist or not? yes
-        //are we allow to create an account for employee? no 
 
         System.out.print("Please Enter Your Address: ");
         String address = input.nextLine();
@@ -106,7 +215,52 @@ public class Main {
         System.out.println("Account created successfully! You can now login.");
     }
 
-    
+    /** customerInterface
+     * 
+     */
+    public static void customerInterface() {
+        // - Search for a product
+            // - Find and display one record using the primary key (BST search - updated to return the value instead of a boolean)
+            // - Find and display one record using the secondary key (BST search - updated to return the value instead of a boolean)
+
+        // - List Database of Products
+            // - List data sorted by primary key (BST display)
+            // - List data sorted by secondary key (BST display)
+
+        // - Place an Order (add a new Order to the heap)
+            // - Overnight Shipping
+            // - Rush Shipping
+            // - Standard Shipping
+
+        // - View Purchases
+            // - View shipped orders (LinkedList display)
+            // - View unshipped orders (LinkedList display)
+            // - Quit and Write to file(s) (update file(s) to reflect customer and order info changes) 
+    }
+
+    /** guestInterface
+     * 
+     */
+    public static void guestInterface() {
+        
+        
+    }
+
+    /** employeeInterface
+     * 
+     */
+    public static void employeeInterface() {
+
+        
+    }
+
+    /** managerInterface
+     * 
+     */
+    public static void managerInterface() {
+
+        
+    }
 
     
 
