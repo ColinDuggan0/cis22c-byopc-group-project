@@ -1,9 +1,9 @@
 public class Employee extends User {
     private boolean isManager;
 
-    public Employee(String firstName, String lastName, String email, 
+    public Employee(String firstName, String lastName, String username, 
         String password, boolean isManager) {
-        super(firstName, lastName, email, password);
+        super(firstName, lastName, username, password);
         this.isManager = isManager;
         
     }

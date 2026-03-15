@@ -1,13 +1,13 @@
 public abstract class User {
     private String firstName;
     private String lastName;
-    private String email;
+    private String username;
     private String password;
 
-    public User(String firstName, String lastName, String email, String password) {
+    public User(String firstName, String lastName, String username, String password) {
         this.firstName = firstName;
         this.lastName = lastName;
-        this.email = email;
+        this.username = username;
         this.password = password;
     }
 
@@ -22,8 +22,8 @@ public abstract class User {
 
     }
 
-    public String getEmail() {
-        return email;
+    public String getUsername() {
+        return username;
 
     }
 
@@ -33,8 +33,8 @@ public abstract class User {
     }
 
     //setters dont know if well need
-    public void setEmail(String email) {
-        this.email = email;
+    public void setUsername(String username) {
+        this.username = username;
 
     }
 
@@ -56,7 +56,7 @@ public abstract class User {
     @Override public String toString() {
         return "First Name: " +  firstName 
             + "Last Name:  " + lastName 
-            + "email: " + email; // no password yet for security
+            + "Username: " + username; // no password yet for security
     }
 
     @Override public boolean equals(Object obj) { // for hastable to check login
@@ -66,13 +66,13 @@ public abstract class User {
             return false;
         } else {
             User user = (User) obj;
-            return this.email.equals(user.email) &&
-                this.password.equals(user.password); // check the email and pw equal
+            return this.username.equals(user.username) &&
+                this.password.equals(user.password); // check the username and pw equal
         }
     }
 
-    @Override public int hashCode() { // override hasCode to hash email
-        return (email + password).hashCode();
+    @Override public int hashCode() { // override hasCode to hash username
+        return (username + password).hashCode();
     }
 
 
