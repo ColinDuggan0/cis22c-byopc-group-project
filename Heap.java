@@ -114,6 +114,85 @@ public class Heap<T> {
    public T getMax() {
       return heap.get(1);
    }
+
+   /**
+    * Inserts a value into the heap and restores heap order by bubbling up.
+    * @param value the value to insert
+    */
+   public void insert(T value) {
+      heap.add(value);
+      heapSize++;
+
+      int index = heapSize;
+      while (index > 1) {
+         int parent = getParent(index);
+         if (cmp.compare(heap.get(index), heap.get(parent)) <= 0) {
+            break;
+         }
+
+         T temp = heap.get(index);
+         heap.set(index, heap.get(parent));
+         heap.set(parent, temp);
+         index = parent;
+      }
+   }
+
+   /**
+    * Removes and returns the maximum value from the heap.
+    * @return the removed maximum value
+    * @throws NoSuchElementException when the heap is empty
+    */
+   public T extractMax() {
+      if (isEmpty()) {
+         throw new NoSuchElementException("Error: Heap is empty.");
+      }
+
+      T max = heap.get(1);
+      T last = heap.remove(heapSize);
+      heapSize--;
+
+      if (!isEmpty()) {
+         heap.set(1, last);
+         heapify(1);
+      }
+
+      return max;
+   }
+
+   /**
+    * Indicates whether the heap currently has no elements.
+    * @return true when heapSize is 0, false otherwise
+    */
+   public boolean isEmpty() {
+      return heapSize == 0;
+   }
+
+   /**
+    * Removes all elements from the heap while preserving 1-based indexing.
+    */
+   public void clear() {
+      heap = new ArrayList<>();
+      heap.add(null);
+      heapSize = 0;
+   }
+
+   /**
+    * Returns a max-to-min sorted snapshot without mutating this heap.
+    * @return a sorted copy of the heap data
+    */
+   public ArrayList<T> heapSortSnapshot() {
+      ArrayList<T> dataCopy = new ArrayList<>();
+      for (int i = 1; i <= heapSize; i++) {
+         dataCopy.add(heap.get(i));
+      }
+
+      Heap<T> copyHeap = new Heap<>(dataCopy, cmp);
+      ArrayList<T> sorted = new ArrayList<>();
+      while (!copyHeap.isEmpty()) {
+         sorted.add(copyHeap.extractMax());
+      }
+      return sorted;
+   }
    
    /**
     * Returns the element at the specified index.
