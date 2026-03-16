@@ -6,6 +6,7 @@ import java.util.Scanner;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Comparator;
 
 
 public class Main {
@@ -14,7 +15,8 @@ public class Main {
         HashTable<Employee> employees = new HashTable<>(10);
         CatalogService catalog = new CatalogService();
         //do we have to load the product file csv? ^^^
-        Heap<Order> orderHeap = new Heap<>(); // is this right?
+        Comparator<Order> orderByPriority = (a, b) -> Integer.compare(a.getPriorityScore(), b.getPriorityScore());
+        Heap<Order> orderHeap = new Heap<>(new ArrayList<>(), orderByPriority);
 
 
         ///////////// USER LOGIN PRINT OUTS ////////////////
@@ -105,6 +107,10 @@ public class Main {
 
         file.close(); // end file scan start new scaner
 
+        // Next ID for new orders (optional: set from max loaded order ID + 1)
+        int[] nextOrderId = new int[1];
+        nextOrderId[0] = 10000;
+
         Scanner input = new Scanner(System.in);
 
         int choice = 0;
@@ -124,7 +130,7 @@ public class Main {
             //print out files one for customer.txt, employee.txt, manager.txt or something
 
             if (choice == 1) { 
-                login(customers, employees, input);
+                login(customers, employees, catalog, orderHeap, nextOrderId, input);
             } else if (choice == 2) { //create an account 
                 createAccount(customers, input);
             } else if (choice == 3) { //guest menu options
@@ -147,10 +153,11 @@ public class Main {
     /** login
      * 
      */
-    public static void login(HashTable<Customer> customers, HashTable<Employee> employees, Scanner input) {
+    public static void login(HashTable<Customer> customers, HashTable<Employee> employees,
+                            CatalogService catalog, Heap<Order> orderHeap, int[] nextOrderId, Scanner input) {
 
         System.out.print("Enter username: ");
-        String username = input.nextLine(); 
+        String username = input.nextLine();
 
         System.out.print("Enter password: ");
         String password = input.nextLine();
@@ -164,11 +171,11 @@ public class Main {
         if (foundCustomer != null && foundCustomer.passwordMatch(password)) {
             System.out.println("Customer login successful!");
             System.out.println(foundCustomer);
-
+            //customerInterface(foundCustomer, catalog, orderHeap, nextOrderId, input);//
         } else if (foundEmployee != null && foundEmployee.passwordMatch(password)) {
             System.out.println("Employee login successful!");
             System.out.println(foundEmployee);
-
+            // employeeInterface(foundEmployee, ...); when you implement it
         } else {
             System.out.println("Invalid username or password.");
         }
