@@ -32,9 +32,13 @@ public class Main {
         while(file.hasNext()) {
             String first = file.next();
 
-            // stop if we reach emoloyees section
+            // stop if we reach employees section
             if (first.equals("EMPLOYEES")) {
                 break;
+            }
+            // skip section header so we don't use "CUSTOMERS" as a first name
+            if (first.equals("CUSTOMERS")) {
+                continue;
             }
 
             String last = file.next();
@@ -53,12 +57,15 @@ public class Main {
 
         //EMPLOYEE SCAN
         while (file.hasNext()) {
-
             String first = file.next();
 
             // stop if we reach orders
             if (first.equals("ORDERS")) {
                 break;
+            }
+            // skip section header so we don't use "EMPLOYEES" as first name
+            if (first.equals("EMPLOYEES")) {
+                continue;
             }
 
             String last = file.next();
@@ -171,7 +178,7 @@ public class Main {
         if (foundCustomer != null && foundCustomer.passwordMatch(password)) {
             System.out.println("Customer login successful!");
             System.out.println(foundCustomer);
-            //customerInterface(foundCustomer, catalog, orderHeap, nextOrderId, input);//
+            customerInterface(foundCustomer, catalog, orderHeap, nextOrderId, input);
         } else if (foundEmployee != null && foundEmployee.passwordMatch(password)) {
             System.out.println("Employee login successful!");
             System.out.println(foundEmployee);
@@ -225,7 +232,64 @@ public class Main {
     /** customerInterface
      * 
      */
-    public static void customerInterface() {
+    public static void customerInterface(
+        Customer currentCustomer,
+        CatalogService catalog,
+        Heap<Order> orderHeap,
+        int[] nextOrderId,
+        Scanner input
+    ) {
+        int choice = -1;
+
+        while (choice != 9) {
+            System.out.println("\n=== Customer Menu ===");
+            System.out.println("1. Search for a product");
+            System.out.println("2. Find product by primary key");
+            System.out.println("3. Find product by secondary key");
+            System.out.println("4. List all products (primary key order)");
+            System.out.println("5. List all products (secondary key order)");
+            System.out.println("6. Place an order");
+            System.out.println("7. View purchases (all orders)");
+            System.out.println("8. View shipped / unshipped orders");
+            System.out.println("9. Quit and write to file(s)");
+            System.out.print("Enter choice: ");
+
+            choice = input.nextInt();
+            input.nextLine();
+
+            switch (choice){
+                case 1:
+                    //searchForProduct(catalog, input);
+                    break;
+                case 2:
+                    //findProductByPrimaryKey(catalog, input);
+                    break;
+                case 3:
+                    //findProductBySecondaryKey(catalog, input);
+                    break;
+                case 4:
+                    //listAllProductsByPrimaryKey(catalog, input);
+                    break;
+                case 5:
+                    //listAllProductsBySecondaryKey(catalog, input);
+                    break;
+                case 6:
+                    placeOrder(currentCustomer, catalog, orderHeap, nextOrderId, input);
+                    break;
+                case 7:
+                    //viewPurchases(currentCustomer, input);
+                    break;
+                case 8:
+                    //viewShippedUnshippedOrders(currentCustomer, input);
+                    break;
+                case 9:
+
+                    System.out.println("Saving and returning to main menu...");
+                    break;
+                default:
+                    System.out.println("Invalid choice. Try again.");
+            }
+        }
         // - Search for a product
             // - Find and display one record using the primary key (BST search - updated to return the value instead of a boolean)
             // - Find and display one record using the secondary key (BST search - updated to return the value instead of a boolean)
@@ -243,6 +307,37 @@ public class Main {
             // - View shipped orders (LinkedList display)
             // - View unshipped orders (LinkedList display)
             // - Quit and Write to file(s) (update file(s) to reflect customer and order info changes) 
+    }
+
+    /** Place an order: collect cart by SKU, shipping speed, then add to heap and customer unshipped. */
+    public static void placeOrder(
+        Customer currentCustomer,
+        CatalogService catalog,
+        Heap<Order> orderHeap,
+        int[] nextOrderId,
+        Scanner input
+    ) {
+        LinkedList<PCPart> cart = new LinkedList<>();
+        System.out.print("Enter SKU (Enter when done): ");
+        for (String sku = input.nextLine().trim(); !sku.isEmpty(); sku = input.nextLine().trim()) {
+            PCPart part = catalog.searchByPrimaryKey(sku);
+            if (part != null) cart.addLast(part);
+            else System.out.println("SKU not found: " + sku);
+            System.out.print("Next SKU (Enter when done): ");
+        }
+        if (cart.getLength() == 0) {
+            System.out.println("Cart empty. Order cancelled.");
+            return;
+        }
+        System.out.print("Shipping 1=Standard 2=Rush 3=Overnight: ");
+        int shippingSpeed = Math.max(1, Math.min(3, input.nextInt()));
+        input.nextLine();
+
+        int orderId = nextOrderId[0]++;
+        Order newOrder = new Order(orderId, currentCustomer, cart, shippingSpeed);
+        orderHeap.insert(newOrder);
+        currentCustomer.addOrder(newOrder);
+        System.out.println("Order placed. ID: " + orderId);
     }
 
     /** guestInterface
