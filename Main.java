@@ -7,11 +7,15 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class Main {
     public static void main(String[] args) throws IOException {
         HashTable<Customer> customers = new HashTable<>(10);
+        Map<String, Customer> customerByUsername = new HashMap<>();
+
         HashTable<Employee> employees = new HashTable<>(10);
         CatalogService catalog = new CatalogService();
         //do we have to load the product file csv? ^^^
@@ -21,8 +25,11 @@ public class Main {
 
         ///////////// USER LOGIN PRINT OUTS ////////////////
         //dummy users for testing
-        customers.add(new Customer("Alicia", "Smith", "alicia@email.com", "1234", 
-            "123 Main St", "San Jose", "CA", "95112"));
+        Customer dummyCustomer = new Customer("Alicia", "Smith", "alicia@email.com", "1234", 
+            "123 Main St", "San Jose", "CA", "95112");
+        customers.add(dummyCustomer);
+        customerByUsername.put(dummyCustomer.getUsername(), dummyCustomer);
+
         employees.add(new Employee("Bobby", "Jones", "bobby@email.com", "abcd", true));
 
         //seeding users_upload.txt file
@@ -52,7 +59,7 @@ public class Main {
             Customer c = new Customer(first, last, username, password, address, city, state, zip);
 
             customers.add(c);
-
+            customerByUsername.put(username, c);
         } 
 
         //EMPLOYEE SCAN
@@ -104,8 +111,7 @@ public class Main {
                 skuScan.close();
             }
 
-            Customer temp = new Customer("", "", username, "", "", "", "", "");
-            Customer customer = customers.get(temp);
+            Customer customer = customerByUsername.get(username);
 
             Order order = new Order(orderId, customer, items, shippingSpeed);
 
@@ -182,7 +188,11 @@ public class Main {
         } else if (foundEmployee != null && foundEmployee.passwordMatch(password)) {
             System.out.println("Employee login successful!");
             System.out.println(foundEmployee);
-            // employeeInterface(foundEmployee, ...); when you implement it
+            if (foundEmployee.getIsManager()) {
+                managerInterface(catalog, orderHeap, input);
+            } else {
+                employeeInterface(catalog, orderHeap, input);
+            }
         } else {
             System.out.println("Invalid username or password.");
         }
@@ -348,20 +358,121 @@ public class Main {
         
     }
 
+    /** Ship the top-priority order: remove from heap, mark shipped, move on customer's lists. */
+    public static void shipTopOrder(Heap<Order> orderHeap) {
+        if (orderHeap.isEmpty()) {
+            System.out.println("No orders to ship.");
+            return;
+        }
+        Order toShip = orderHeap.extractMax();
+        toShip.setShipped(true);
+
+        Customer customer = toShip.getCustomer();
+        if (customer != null) {
+            customer.markOrderShipped(toShip.getOrderId());
+        } else {
+            System.out.println("Warning: shipped order " + toShip.getOrderId()
+                               + " has no customer attached (heap only).");
+        }
+
+        System.out.println("Shipped: " + toShip);
+    }
+
     /** employeeInterface
      * 
      */
-    public static void employeeInterface() {
+    public static void employeeInterface(CatalogService catalog, Heap<Order> orderHeap, Scanner input) {
+        int choice = -1;
+        while (choice != 6) {
+            System.out.println("\n=== Employee Menu ===");
+            System.out.println("1. Search for an order (by order id)");
+            System.out.println("2. Search for an order (by customer first and last name)");
+            System.out.println("3. View order with highest priority");
+            System.out.println("4. View all orders sorted by priority");
+            System.out.println("5. Ship an order");
+            System.out.println("6. Quit and write to file(s)");
+            System.out.print("Enter choice: ");
+            choice = input.nextInt();
+            input.nextLine();
 
-        
+            switch (choice) {
+                case 1:
+                    // searchByOrderId(...);
+                    break;
+                case 2:
+                    // searchByCustomerName(...);
+                    break;
+                case 3:
+                    // viewHighestPriorityOrder(orderHeap);
+                    break;
+                case 4:
+                    // viewAllOrdersSortedByPriority(orderHeap);
+                    break;
+                case 5:
+                    shipTopOrder(orderHeap);
+                    break;
+                case 6:
+                    System.out.println("Saving and returning to main menu...");
+                    break;
+                default:
+                    System.out.println("Invalid choice. Try again.");
+            }
+        }
     }
+
 
     /** managerInterface
      * 
      */
-    public static void managerInterface() {
+    public static void managerInterface(CatalogService catalog, Heap<Order> orderHeap, Scanner input) {
+        int choice = -1;
+        while (choice != 9) {
+            System.out.println("\n=== Manager Menu ===");
+            System.out.println("1. Search for an order (by order id)");
+            System.out.println("2. Search for an order (by customer first and last name)");
+            System.out.println("3. View order with highest priority");
+            System.out.println("4. View all orders sorted by priority");
+            System.out.println("5. Ship an order");
+            System.out.println("6. Quit and write to file(s)");
+            System.out.println("7. Add new product");
+            System.out.println("8. Update existing product");
+            System.out.println("9. Remove product");
+            System.out.print("Enter choice: ");
+            choice = input.nextInt();
+            input.nextLine();
 
-        
+            switch (choice) {
+                case 1:
+                    // searchByOrderId(...);
+                    break;
+                case 2:
+                    // searchByCustomerName(...);
+                    break;
+                case 3:
+                    // viewHighestPriorityOrder(orderHeap);
+                    break;
+                case 4:
+                    // viewAllOrdersSortedByPriority(orderHeap);
+                    break;
+                case 5:
+                    shipTopOrder(orderHeap);
+                    break;
+                case 6:
+                    System.out.println("Saving and returning to main menu...");
+                    break;
+                case 7:
+                    // addProduct(catalog, input);
+                    break;
+                case 8:
+                    // updateProduct(catalog, input);
+                    break;
+                case 9:
+                    // removeProduct(catalog, input);
+                    break;
+                default:
+                    System.out.println("Invalid choice. Try again.");
+            }
+        }
     }
 
     
