@@ -104,15 +104,36 @@ public class Main {
             // read product SKUs until end of line
             String line = file.nextLine().trim();
 
+            // New format writes: shippedFlag first, then SKUs.
+            // Old format writes only SKUs, so shippedFlag will default to false.
+            boolean shipped = false;
+
             if (!line.isEmpty()) {
                 Scanner skuScan = new Scanner(line);
 
+                if (skuScan.hasNext()) {
+                    String firstToken = skuScan.next();
+                    boolean tokenIsBool =
+                        firstToken.equalsIgnoreCase("true")
+                        || firstToken.equalsIgnoreCase("false");
+
+                    if (tokenIsBool) {
+                        shipped = Boolean.parseBoolean(firstToken);
+                    } else {
+                        // First token is actually a SKU in the legacy format.
+                        PCPart part = catalog.searchByPrimaryKey(firstToken);
+                        if (part != null) {
+                            items.addLast(part);
+                        }
+                    }
+                }
+
                 while (skuScan.hasNext()) {
-
                     String sku = skuScan.next();
-                    PCPart part = catalog.searchByPrimaryKey(sku); // is this right?
-
-                    items.addLast(part);
+                    PCPart part = catalog.searchByPrimaryKey(sku);
+                    if (part != null) {
+                        items.addLast(part);
+                    }
                 }
 
                 skuScan.close();
@@ -130,8 +151,20 @@ public class Main {
             }
 
             Order order = new Order(orderId, customer, items, shippingSpeed);
+            order.setShipped(shipped);
 
-            orderHeap.insert(order); // add to priority queue 
+            // Heap should contain only unshipped orders (shipped orders belong to the
+            // customer's shippedOrders list).
+            if (!shipped) {
+                if (customer != null) {
+                    customer.addOrder(order);
+                }
+                orderHeap.insert(order); // add to priority queue
+            } else {
+                if (customer != null) {
+                    customer.getShippedOrders().addLast(order);
+                }
+            }
         }
 
         file.close(); // end file scan start new scaner
@@ -208,7 +241,7 @@ public class Main {
         if (foundCustomer != null && foundCustomer.passwordMatch(password)) {
             System.out.println("Customer login successful!");
             System.out.println(foundCustomer);
-            customerInterface(foundCustomer, catalog, orderHeap, nextOrderId, input);
+            customerInterface(foundCustomer, customerList, employeeList, catalog, orderHeap, nextOrderId, input);
         } else if (foundEmployee != null && foundEmployee.passwordMatch(password)) {
             System.out.println("Employee login successful!");
             System.out.println(foundEmployee);
@@ -269,6 +302,8 @@ public class Main {
      */
     public static void customerInterface(
         Customer currentCustomer,
+        LinkedList<Customer> customerList,
+        LinkedList<Employee> employeeList,
         CatalogService catalog,
         Heap<Order> orderHeap,
         int[] nextOrderId,
@@ -303,7 +338,8 @@ public class Main {
                     currentCustomer.viewOrders();
                     break;
                 case 5:
-                    PersistenceService.saveCustomerAndOrderInfo(currentCustomer);
+                    // Write the same files the program loads on startup.
+                    PersistenceService.saveAllState(customerList, employeeList, catalog);
                     System.out.println("Saving and returning to main menu...");
                     break;
                 default:

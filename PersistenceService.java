@@ -71,9 +71,9 @@ public class PersistenceService {
             customerList.positionIterator();
             while (!customerList.offEnd()) {
                 Customer c = customerList.getIterator();
-                writeOrdersForCustomer(out, c.getUnshippedOrders());
+                writeOrdersForCustomer(out, c.getUnshippedOrders(), false);
                 out.println();
-                writeOrdersForCustomer(out, c.getShippedOrders());
+                writeOrdersForCustomer(out, c.getShippedOrders(), true);
                 out.println();
                 customerList.advanceIterator();
             }
@@ -88,7 +88,9 @@ public class PersistenceService {
         }
     }
 
-    private static void writeOrdersForCustomer(PrintWriter out, LinkedList<Order> orders) {
+    // Persist order lines as:
+    // orderId username shippingSpeed shippedFlag sku1 sku2 ...
+    private static void writeOrdersForCustomer(PrintWriter out, LinkedList<Order> orders, boolean shippedFlag) {
         orders.positionIterator();
         while (!orders.offEnd()) {
             Order o = orders.getIterator();
@@ -96,6 +98,8 @@ public class PersistenceService {
                 out.print(o.getOrderId()); out.print(" ");
                 out.print(safeToken(o.getCustomer().getUsername())); out.print(" ");
                 out.print(o.getShippingSpeed());
+                out.print(" ");
+                out.print(Boolean.toString(shippedFlag));
 
                 LinkedList<PCPart> items = o.getLineItems();
                 if (items != null) {
