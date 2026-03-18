@@ -396,7 +396,7 @@ public class Main {
     }
 
     /** employeeInterface
-     * 
+     *
      */
     public static void employeeInterface(CatalogService catalog, Heap<Order> orderHeap, Scanner input) {
         int choice = -1;
@@ -414,16 +414,52 @@ public class Main {
 
             switch (choice) {
                 case 1:
-                    // searchByOrderId(...);
+                    System.out.print("Enter order ID: ");
+                    int searchId = input.nextInt();
+                    input.nextLine();
+                    boolean foundById = false;
+                    for (int i = 1; i <= orderHeap.getHeapSize(); i++) {
+                        Order o = orderHeap.getElement(i);
+                        if (o.getOrderId() == searchId) {
+                            System.out.println(o);
+                            foundById = true;
+                            break;
+                        }
+                    }
+                    if (!foundById) System.out.println("No order found with ID: " + searchId);
                     break;
                 case 2:
-                    // searchByCustomerName(...);
+                    System.out.print("Enter customer first name: ");
+                    String searchFirst = input.nextLine().trim();
+                    System.out.print("Enter customer last name: ");
+                    String searchLast = input.nextLine().trim();
+                    boolean foundByName = false;
+                    for (int i = 1; i <= orderHeap.getHeapSize(); i++) {
+                        Order o = orderHeap.getElement(i);
+                        Customer c = o.getCustomer();
+                        if (c != null
+                                && c.getFirstName().equalsIgnoreCase(searchFirst)
+                                && c.getLastName().equalsIgnoreCase(searchLast)) {
+                            System.out.println(o);
+                            foundByName = true;
+                        }
+                    }
+                    if (!foundByName) System.out.println("No orders found for: " + searchFirst + " " + searchLast);
                     break;
                 case 3:
-                    // viewHighestPriorityOrder(orderHeap);
+                    if (orderHeap.isEmpty()) System.out.println("No orders in queue.");
+                    else System.out.println("Highest priority order:\n" + orderHeap.getMax());
                     break;
                 case 4:
-                    // viewAllOrdersSortedByPriority(orderHeap);
+                    if (orderHeap.isEmpty()) {
+                        System.out.println("No orders in queue.");
+                    } else {
+                        ArrayList<Order> sorted = orderHeap.heapSortSnapshot();
+                        System.out.println("\n=== All Orders by Priority (Highest to Lowest) ===");
+                        for (int i = 0; i < sorted.size(); i++) {
+                            System.out.println((i + 1) + ". " + sorted.get(i));
+                        }
+                    }
                     break;
                 case 5:
                     shipTopOrder(orderHeap);
