@@ -364,16 +364,16 @@ public class Main {
 
             switch (choice) {
                 case 1:
-                    // searchByOrderId(...);
+                    OrderUI.searchForOrder(orderHeap, input);
                     break;
                 case 2:
-                    // searchByCustomerName(...);
+                    OrderService.viewHighestPriorityOrder(orderHeap);
                     break;
                 case 3:
-                    // viewHighestPriorityOrder(orderHeap);
+                    OrderService.viewAllOrdersSortedByPriority(orderHeap);
                     break;
                 case 4:
-                    // viewAllOrdersSortedByPriority(orderHeap);
+                    OrderService.shipTopOrder(orderHeap);
                     break;
                 case 5:
                     PersistenceService.saveAllState(customerList, employeeList, catalog);
@@ -420,10 +420,10 @@ public class Main {
                     OrderService.viewOrdersByCustomerName(orderHeap, input);
                     break;
                 case 3:
-                    // OrderService.viewHighestPriorityOrder(orderHeap);
+                    OrderService.viewHighestPriorityOrder(orderHeap);
                     break;
                 case 4:
-                    // OrderService.viewAllOrdersSortedByPriority(orderHeap);
+                    OrderService.viewAllOrdersSortedByPriority(orderHeap);
                     break;
                 case 5:
                     OrderService.shipTopOrder(orderHeap);
@@ -433,13 +433,73 @@ public class Main {
                     System.out.println("Saving and returning to main menu...");
                     break;
                 case 7:
-                    //addProduct(catalog, input);
+                    System.out.print("Enter SKU: ");
+                    String newSku = input.nextLine().trim();
+                    System.out.print("Enter name/key: ");
+                    String newName = input.nextLine().trim();
+                    System.out.print("Enter category: ");
+                    String newCategory = input.nextLine().trim();
+                    System.out.print("Enter price: ");
+                    double newPrice7 = input.nextDouble();
+                    input.nextLine();
+                    System.out.print("Enter initial stock: ");
+                    int newStock7 = input.nextInt();
+                    input.nextLine();
+                    System.out.print("Enter specs: ");
+                    String newSpecs7 = input.nextLine().trim();
+                    try {
+                        catalog.addProduct(new PCPart(newSku, newName, newCategory, newPrice7, newStock7, newSpecs7));
+                        System.out.println("Product added: " + newSku);
+                    } catch (IllegalArgumentException e) {
+                        System.out.println("Error: " + e.getMessage());
+                    }
                     break;
                 case 8:
-                    //updateProduct(catalog, input);
+                    System.out.print("Enter SKU to update: ");
+                    String updateSku = input.nextLine().trim();
+                    PCPart toUpdate = catalog.searchByPrimaryKey(updateSku);
+                    if (toUpdate == null) {
+                        System.out.println("Product not found: " + updateSku);
+                    } else {
+                        System.out.println("Found: " + toUpdate);
+                        System.out.println("  1. Update price");
+                        System.out.println("  2. Update specs/description");
+                        System.out.println("  3. Add more stock");
+                        System.out.print("Enter choice: ");
+                        int updateChoice = input.nextInt();
+                        input.nextLine();
+                        switch (updateChoice) {
+                            case 1:
+                                System.out.print("Enter new price: ");
+                                double newPrice8 = input.nextDouble();
+                                input.nextLine();
+                                catalog.updatePrice(updateSku, newPrice8);
+                                System.out.println("Price updated.");
+                                break;
+                            case 2:
+                                System.out.print("Enter new specs: ");
+                                String newSpecs8 = input.nextLine().trim();
+                                catalog.updateSpecs(updateSku, newSpecs8);
+                                System.out.println("Specs updated.");
+                                break;
+                            case 3:
+                                System.out.print("Enter amount to add to stock: ");
+                                int addAmount = input.nextInt();
+                                input.nextLine();
+                                toUpdate.addToStock(addAmount);
+                                System.out.println("Stock updated. New stock: " + toUpdate.getInStock());
+                                break;
+                            default:
+                                System.out.println("Invalid choice.");
+                        }
+                    }
                     break;
                 case 9:
-                    //removeProduct(catalog, input);
+                    System.out.print("Enter SKU to remove: ");
+                    String removeSku = input.nextLine().trim();
+                    PCPart removed = catalog.removeProduct(removeSku);
+                    if (removed != null) System.out.println("Removed: " + removed);
+                    else System.out.println("Product not found: " + removeSku);
                     break;
                 default:
                     System.out.println("Invalid choice. Try again.");
