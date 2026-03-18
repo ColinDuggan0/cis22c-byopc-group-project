@@ -2,6 +2,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.io.BufferedWriter;
 import java.util.ArrayList;
 import java.util.Comparator;
 
@@ -177,6 +178,44 @@ public class CatalogService {
          }
       }
       return loaded;
+   }
+
+   /** Writes current catalog contents to a CSV file (sorted by SKU). */
+   public void writeToCsv(Path csvPath) throws IOException {
+      try (BufferedWriter bw = Files.newBufferedWriter(csvPath)) {
+         bw.write("SKU,NameKey,Category,Price,InStock,Specs");
+         bw.newLine();
+         skuIndex.inOrderForEach(part -> {
+            try {
+               bw.write(csvEscape(part.getSku()));
+               bw.write(",");
+               bw.write(csvEscape(part.getNameKey()));
+               bw.write(",");
+               bw.write(csvEscape(part.getCategory()));
+               bw.write(",");
+               bw.write(Double.toString(part.getPrice()));
+               bw.write(",");
+               bw.write(Integer.toString(part.getInStock()));
+               bw.write(",");
+               bw.write(csvEscape(part.getSpecs()));
+               bw.newLine();
+            } catch (IOException e) {
+               throw new RuntimeException(e);
+            }
+         });
+      } catch (RuntimeException re) {
+         if (re.getCause() instanceof IOException) {
+            throw (IOException) re.getCause();
+         }
+         throw re;
+      }
+   }
+
+   private static String csvEscape(String value) {
+      if (value == null) return "";
+      boolean needsQuotes = value.contains(",") || value.contains("\"") || value.contains("\n") || value.contains("\r");
+      String v = value.replace("\"", "\"\"");
+      return needsQuotes ? "\"" + v + "\"" : v;
    }
 
    private static boolean looksLikeHeader(ArrayList<String> fields) {
