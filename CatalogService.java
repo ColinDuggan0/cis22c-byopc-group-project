@@ -60,13 +60,13 @@ public class CatalogService {
 
    public LinkedList<PCPart> searchBySecondaryKey(String nameKey, String category) {
       LinkedList<PCPart> matches = new LinkedList<>();
-      if (nameKey == null || nameKey.isBlank()) {
+      if (nameKey == null || nameKey.trim().isEmpty()) {
          return matches;
       }
 
       secondaryIndex.inOrderForEach(part -> {
          boolean sameName = part.getNameKey().equalsIgnoreCase(nameKey);
-         boolean sameCategory = category == null || category.isBlank() || part.getCategory().equalsIgnoreCase(category);
+         boolean sameCategory = category == null || category.trim().isEmpty() || part.getCategory().equalsIgnoreCase(category);
          if (sameName && sameCategory) {
             matches.addLast(part);
          }
@@ -140,7 +140,7 @@ public class CatalogService {
          boolean isFirstLine = true;
 
          while ((line = br.readLine()) != null) {
-            if (line.isBlank()) {
+            if (line.trim().isEmpty()) {
                continue;
             }
 
