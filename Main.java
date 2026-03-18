@@ -433,109 +433,39 @@ public class Main {
         Scanner input
     ) {
         int choice = -1;
-        while (choice != 6) {
+        // Keep the first/top-level options aligned with the Employee menu:
+        // 1) Search for an Order, 2) Highest priority, 3) All sorted, 4) Ship, 5) Quit/save.
+        while (choice != 5) {
             System.out.println("\n=== Manager Menu ===");
-            System.out.println("1. Search for an order (by order id)");
-            System.out.println("2. Search for an order (by customer first and last name)");
-            System.out.println("3. View order with highest priority");
-            System.out.println("4. View all orders sorted by priority");
-            System.out.println("5. Ship an order");
-            System.out.println("6. Quit and write to file(s)");
-            System.out.println("7. Add new product");
-            System.out.println("8. Update existing product");
-            System.out.println("9. Remove product");
+            System.out.println("1. Search for an order");
+            System.out.println("2. View order with highest priority");
+            System.out.println("3. View all orders sorted by priority");
+            System.out.println("4. Ship an order");
+            System.out.println("5. Quit and write to file(s)");
+            System.out.println("6. Update Products Catalogue By Primary Key");
             System.out.print("Enter choice: ");
             choice = input.nextInt();
             input.nextLine();
 
             switch (choice) {
                 case 1:
-                    OrderService.viewOrderByOrderId(orderHeap, input);
+                    OrderUI.searchForOrder(orderHeap, input);
                     break;
                 case 2:
-                    OrderService.viewOrdersByCustomerName(orderHeap, input);
-                    break;
-                case 3:
                     OrderService.viewHighestPriorityOrder(orderHeap);
                     break;
-                case 4:
+                case 3:
                     OrderService.viewAllOrdersSortedByPriority(orderHeap);
                     break;
-                case 5:
+                case 4:
                     OrderService.shipTopOrder(orderHeap);
                     break;
-                case 6:
+                case 5:
                     PersistenceService.saveAllState(customerList, employeeList, catalog);
                     System.out.println("Saving and returning to main menu...");
                     break;
-                case 7:
-                    System.out.print("Enter SKU: ");
-                    String newSku = input.nextLine().trim();
-                    System.out.print("Enter name/key: ");
-                    String newName = input.nextLine().trim();
-                    System.out.print("Enter category: ");
-                    String newCategory = input.nextLine().trim();
-                    System.out.print("Enter price: ");
-                    double newPrice7 = input.nextDouble();
-                    input.nextLine();
-                    System.out.print("Enter initial stock: ");
-                    int newStock7 = input.nextInt();
-                    input.nextLine();
-                    System.out.print("Enter specs: ");
-                    String newSpecs7 = input.nextLine().trim();
-                    try {
-                        catalog.addProduct(new PCPart(newSku, newName, newCategory, newPrice7, newStock7, newSpecs7));
-                        System.out.println("Product added: " + newSku);
-                    } catch (IllegalArgumentException e) {
-                        System.out.println("Error: " + e.getMessage());
-                    }
-                    break;
-                case 8:
-                    System.out.print("Enter SKU to update: ");
-                    String updateSku = input.nextLine().trim();
-                    PCPart toUpdate = catalog.searchByPrimaryKey(updateSku);
-                    if (toUpdate == null) {
-                        System.out.println("Product not found: " + updateSku);
-                    } else {
-                        System.out.println("Found: " + toUpdate);
-                        System.out.println("  1. Update price");
-                        System.out.println("  2. Update specs/description");
-                        System.out.println("  3. Add more stock");
-                        System.out.print("Enter choice: ");
-                        int updateChoice = input.nextInt();
-                        input.nextLine();
-                        switch (updateChoice) {
-                            case 1:
-                                System.out.print("Enter new price: ");
-                                double newPrice8 = input.nextDouble();
-                                input.nextLine();
-                                catalog.updatePrice(updateSku, newPrice8);
-                                System.out.println("Price updated.");
-                                break;
-                            case 2:
-                                System.out.print("Enter new specs: ");
-                                String newSpecs8 = input.nextLine().trim();
-                                catalog.updateSpecs(updateSku, newSpecs8);
-                                System.out.println("Specs updated.");
-                                break;
-                            case 3:
-                                System.out.print("Enter amount to add to stock: ");
-                                int addAmount = input.nextInt();
-                                input.nextLine();
-                                toUpdate.addToStock(addAmount);
-                                System.out.println("Stock updated. New stock: " + toUpdate.getInStock());
-                                break;
-                            default:
-                                System.out.println("Invalid choice.");
-                        }
-                    }
-                    break;
-                case 9:
-                    System.out.print("Enter SKU to remove: ");
-                    String removeSku = input.nextLine().trim();
-                    PCPart removed = catalog.removeProduct(removeSku);
-                    if (removed != null) System.out.println("Removed: " + removed);
-                    else System.out.println("Product not found: " + removeSku);
+                case 6:
+                    CatalogManagerUI.updateProductsCatalogueByPrimaryKey(catalog, input);
                     break;
                 default:
                     System.out.println("Invalid choice. Try again.");

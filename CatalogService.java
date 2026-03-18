@@ -232,6 +232,11 @@ public class CatalogService {
       if (value.length() >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
          value = value.substring(1, value.length() - 1);
       }
+      // Handle UTF-8 BOM (Byte Order Mark) that may appear at the beginning of the first CSV header token.
+      // Without this, header detection can fail and parsing may try to parse "Price" as a number.
+      if (!value.isEmpty() && value.charAt(0) == '\uFEFF') {
+         value = value.substring(1);
+      }
       return value;
    }
 
