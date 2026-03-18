@@ -1,9 +1,17 @@
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 public class CatalogService {
    private final BST<PCPart> skuIndex;
@@ -167,6 +175,98 @@ public class CatalogService {
          }
       }
       return loaded;
+   }
+
+   public int loadFromXlsx(Path xlsxPath) throws IOException {
+      int loaded = 0;
+      try (ZipFile zipFile = new ZipFile(xlsxPath.toFile())) {
+         ArrayList<String> sharedStrings = readSharedStrings(zipFile);
+         ZipEntry sheetEntry = zipFile.getEntry("xl/worksheets/sheet1.xml");
+         if (sheetEntry == null) {
+            return 0;
+         }
+
+         try (InputStream in = zipFile.getInputStream(sheetEntry)) {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setNamespaceAware(true);
+            Document doc = factory.newDocumentBuilder().parse(in);
+            NodeList rows = doc.getElementsByTagNameNS("http://schemas.openxmlformats.org/spreadsheetml/2006/main", "row");
+
+            for (int i = 1; i < rows.getLength(); i++) {
+               Node rowNode = rows.item(i);
+               if (!(rowNode instanceof Element)) {
+                  continue;
+               }
+               ArrayList<String> fields = readRowValues((Element) rowNode, sharedStrings);
+               if (fields.size() < 6) {
+                  continue;
+               }
+
+               String sku = cleanField(fields.get(0));
+               String nameKey = cleanField(fields.get(1));
+               String category = cleanField(fields.get(2));
+               double price = parsePrice(fields.get(3));
+               int inStock = Integer.parseInt(cleanField(fields.get(4)));
+               String specs = cleanField(fields.get(5));
+
+               addProduct(new PCPart(sku, nameKey, category, price, inStock, specs));
+               loaded++;
+            }
+         } catch (Exception e) {
+            throw new IOException("Unable to read xlsx file", e);
+         }
+      }
+      return loaded;
+   }
+
+   private static ArrayList<String> readSharedStrings(ZipFile zipFile) throws IOException {
+      ArrayList<String> sharedStrings = new ArrayList<>();
+      ZipEntry entry = zipFile.getEntry("xl/sharedStrings.xml");
+      if (entry == null) {
+         return sharedStrings;
+      }
+
+      try (InputStream in = zipFile.getInputStream(entry)) {
+         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+         factory.setNamespaceAware(true);
+         Document doc = factory.newDocumentBuilder().parse(in);
+         NodeList nodes = doc.getElementsByTagNameNS("http://schemas.openxmlformats.org/spreadsheetml/2006/main", "si");
+         for (int i = 0; i < nodes.getLength(); i++) {
+            NodeList children = ((Element) nodes.item(i)).getElementsByTagNameNS("http://schemas.openxmlformats.org/spreadsheetml/2006/main", "t");
+            StringBuilder value = new StringBuilder();
+            for (int j = 0; j < children.getLength(); j++) {
+               value.append(children.item(j).getTextContent());
+            }
+            sharedStrings.add(value.toString());
+         }
+      } catch (Exception e) {
+         throw new IOException("Unable to read shared strings", e);
+      }
+
+      return sharedStrings;
+   }
+
+   private static ArrayList<String> readRowValues(Element row, ArrayList<String> sharedStrings) {
+      ArrayList<String> values = new ArrayList<>();
+      NodeList cells = row.getElementsByTagNameNS("http://schemas.openxmlformats.org/spreadsheetml/2006/main", "c");
+      for (int i = 0; i < cells.getLength(); i++) {
+         Element cell = (Element) cells.item(i);
+         String type = cell.getAttribute("t");
+         NodeList valueNodes = cell.getElementsByTagNameNS("http://schemas.openxmlformats.org/spreadsheetml/2006/main", "v");
+         if (valueNodes.getLength() == 0) {
+            values.add("");
+            continue;
+         }
+         String value = valueNodes.item(0).getTextContent();
+         if ("s".equals(type)) {
+            int index = Integer.parseInt(value);
+            if (index >= 0 && index < sharedStrings.size()) {
+               value = sharedStrings.get(index);
+            }
+         }
+         values.add(value);
+      }
+      return values;
    }
 
    private static boolean looksLikeHeader(ArrayList<String> fields) {
