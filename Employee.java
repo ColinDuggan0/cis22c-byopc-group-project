@@ -23,7 +23,6 @@ public class Employee extends User {
     //other methods
     public String toString() {
         String result = super.toString();
-        String manager = "";
         if (isManager == true) {
             result += "Manager: yes";
         } else {
