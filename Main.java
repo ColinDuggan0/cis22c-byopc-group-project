@@ -12,6 +12,7 @@ public class Main {
         HashTable<Customer> customers = new HashTable<>(10);
         HashTable<Employee> employees = new HashTable<>(10);
         CatalogService catalog = new CatalogService();
+        catalog.loadFromCsv(java.nio.file.Path.of("pc_parts_products.csv"));
         Heap<Order> orderHeap = new Heap<>(new ArrayList<Order>(), getOrderComparator());
 
         // dummy users for testing
