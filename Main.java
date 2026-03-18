@@ -2,37 +2,37 @@
  * @author Felipa Mendez
  * @author Peilian Song
  */
+import java.util.Comparator;
 import java.util.Scanner;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
-
 
 public class Main {
     public static void main(String[] args) throws IOException {
         HashTable<Customer> customers = new HashTable<>(10);
         HashTable<Employee> employees = new HashTable<>(10);
         CatalogService catalog = new CatalogService();
-        //do we have to load the product file csv? ^^^
-        Heap<Order> orderHeap = new Heap<>(); // is this right?
+        Heap<Order> orderHeap = new Heap<>(new ArrayList<Order>(), getOrderComparator());
 
-
-        ///////////// USER LOGIN PRINT OUTS ////////////////
-        //dummy users for testing
-        customers.add(new Customer("Alicia", "Smith", "alicia@email.com", "1234", 
+        // dummy users for testing
+        customers.add(new Customer("Alicia", "Smith", "alicia@email.com", "1234",
             "123 Main St", "San Jose", "CA", "95112"));
         employees.add(new Employee("Bobby", "Jones", "bobby@email.com", "abcd", true));
 
-        //seeding users_upload.txt file
+        // seeding users_upload.txt file
         Scanner file = new Scanner(new File("users_upload.txt"));
 
-        //USER SCAN
-        while(file.hasNext()) {
+        // USER SCAN
+        while (file.hasNext()) {
             String first = file.next();
 
-            // stop if we reach emoloyees section
+            // stop if we reach employees section
             if (first.equals("EMPLOYEES")) {
                 break;
+            }
+            // skip headers/blank markers
+            if (first.equals("CUSTOMERS")) {
+                continue;
             }
 
             String last = file.next();
@@ -44,14 +44,11 @@ public class Main {
             String zip = file.next();
 
             Customer c = new Customer(first, last, username, password, address, city, state, zip);
-
             customers.add(c);
+        }
 
-        } 
-
-        //EMPLOYEE SCAN
+        // EMPLOYEE SCAN
         while (file.hasNext()) {
-
             String first = file.next();
 
             // stop if we reach orders
@@ -60,18 +57,16 @@ public class Main {
             }
 
             String last = file.next();
-            String email = file.next();
+            String username = file.next();
             String password = file.next();
             boolean manager = file.nextBoolean();
 
-            Employee e = new Employee(first, last, email, password, manager);
-
+            Employee e = new Employee(first, last, username, password, manager);
             employees.add(e);
         }
 
-        //ORDER SCAN
+        // ORDER SCAN
         while (file.hasNext()) {
-
             int orderId = file.nextInt();
             String username = file.next();
             int shippingSpeed = file.nextInt();
@@ -80,18 +75,15 @@ public class Main {
 
             // read product SKUs until end of line
             String line = file.nextLine().trim();
-
             if (!line.isEmpty()) {
                 Scanner skuScan = new Scanner(line);
-
                 while (skuScan.hasNext()) {
-
                     String sku = skuScan.next();
-                    PCPart part = catalog.searchByPrimaryKey(sku); // is this right?
-
-                    items.addLast(part);
+                    PCPart part = catalog.searchByPrimaryKey(sku);
+                    if (part != null) {
+                        items.addLast(part);
+                    }
                 }
-
                 skuScan.close();
             }
 
@@ -99,58 +91,88 @@ public class Main {
             Customer customer = customers.get(temp);
 
             Order order = new Order(orderId, customer, items, shippingSpeed);
-
-            orderHeap.insert(order); // add to priority queue 
+            orderHeap.insert(order);
+            if (customer != null) {
+                customer.addOrder(order);
+            }
         }
 
-        file.close(); // end file scan start new scaner
+        file.close();
 
         Scanner input = new Scanner(System.in);
-
         int choice = 0;
 
-        while (choice != 4) { 
+        while (choice != 4) {
             System.out.println("1. Login");
             System.out.println("2. Create Account");
             System.out.println("3. Continue as Guest");
             System.out.println("4. Quit");
             System.out.print("Enter choice: ");
 
-            
-            choice = input.nextInt();
-            input.nextLine();
+            choice = readInt(input);
 
-            //lets use 3 differend methods to separate the employee, guest, and customer menu options
-            //print out files one for customer.txt, employee.txt, manager.txt or something
-
-            if (choice == 1) { 
-                login(customers, employees, input);
-            } else if (choice == 2) { //create an account 
+            if (choice == 1) {
+                login(customers, employees, orderHeap, input);
+            } else if (choice == 2) {
                 createAccount(customers, input);
-            } else if (choice == 3) { //guest menu options
+            } else if (choice == 3) {
                 System.out.println("\nLogged in as Guest.");
                 guestInterface();
-                
             } else if (choice == 4) {
                 System.out.println("Exiting program...");
-
             } else {
                 System.out.println("Invalid choice. Try again.");
             }
-
         }
 
         input.close();
-
     }
 
-    /** login
-     * 
-     */
-    public static void login(HashTable<Customer> customers, HashTable<Employee> employees, Scanner input) {
+    private static Comparator<Order> getOrderComparator() {
+        return (a, b) -> {
+            if (a == null && b == null) {
+                return 0;
+            }
+            if (a == null) {
+                return -1;
+            }
+            if (b == null) {
+                return 1;
+            }
+
+            int speedCompare = Integer.compare(a.getShippingSpeed(), b.getShippingSpeed());
+            if (speedCompare != 0) {
+                return speedCompare;
+            }
+
+            // older order gets higher priority
+            int ageCompare = Long.compare(b.getCreatedAtEpochMillis(), a.getCreatedAtEpochMillis());
+            if (ageCompare != 0) {
+                return ageCompare;
+            }
+
+            return Integer.compare(b.getOrderId(), a.getOrderId());
+        };
+    }
+
+    private static int readInt(Scanner input) {
+        while (!input.hasNextInt()) {
+            System.out.print("Please enter a valid number: ");
+            input.nextLine();
+        }
+        int value = input.nextInt();
+        input.nextLine();
+        return value;
+    }
+
+    /** login */
+    public static void login(HashTable<Customer> customers,
+                             HashTable<Employee> employees,
+                             Heap<Order> orderHeap,
+                             Scanner input) {
 
         System.out.print("Enter username: ");
-        String username = input.nextLine(); 
+        String username = input.nextLine();
 
         System.out.print("Enter password: ");
         String password = input.nextLine();
@@ -164,19 +186,23 @@ public class Main {
         if (foundCustomer != null && foundCustomer.passwordMatch(password)) {
             System.out.println("Customer login successful!");
             System.out.println(foundCustomer);
+            customerInterface();
 
         } else if (foundEmployee != null && foundEmployee.passwordMatch(password)) {
             System.out.println("Employee login successful!");
             System.out.println(foundEmployee);
+            employeeInterface(orderHeap, customers, input);
+
+            if (foundEmployee.getIsManager()) {
+                managerInterface();
+            }
 
         } else {
             System.out.println("Invalid username or password.");
         }
     }
 
-    /** createAccount
-     * 
-     */
+    /** createAccount */
     public static void createAccount(HashTable<Customer> customerTable, Scanner input) {
 
         System.out.print("Enter Username: ");
@@ -208,63 +234,157 @@ public class Main {
         System.out.print("Please Enter Your ZIP: ");
         String zip = input.nextLine();
 
-        Customer newCustomer = new Customer(firstname, lastname, username, password, 
+        Customer newCustomer = new Customer(firstname, lastname, username, password,
             address, city, state, zip);
         customerTable.add(newCustomer);
 
         System.out.println("Account created successfully! You can now login.");
     }
 
-    /** customerInterface
-     * 
-     */
+    /** customerInterface */
     public static void customerInterface() {
-        // - Search for a product
-            // - Find and display one record using the primary key (BST search - updated to return the value instead of a boolean)
-            // - Find and display one record using the secondary key (BST search - updated to return the value instead of a boolean)
-
-        // - List Database of Products
-            // - List data sorted by primary key (BST display)
-            // - List data sorted by secondary key (BST display)
-
-        // - Place an Order (add a new Order to the heap)
-            // - Overnight Shipping
-            // - Rush Shipping
-            // - Standard Shipping
-
-        // - View Purchases
-            // - View shipped orders (LinkedList display)
-            // - View unshipped orders (LinkedList display)
-            // - Quit and Write to file(s) (update file(s) to reflect customer and order info changes) 
+        // TODO: customer menu still pending
     }
 
-    /** guestInterface
-     * 
-     */
+    /** guestInterface */
     public static void guestInterface() {
-        
-        
+        // TODO: guest menu still pending
     }
 
-    /** employeeInterface
-     * 
-     */
-    public static void employeeInterface() {
+    /** employeeInterface */
+    public static void employeeInterface(Heap<Order> orderHeap,
+                                         HashTable<Customer> customers,
+                                         Scanner input) {
+        int choice = 0;
 
-        
+        while (choice != 6) {
+            System.out.println("\n=== Employee Menu ===");
+            System.out.println("1. Search for an Order");
+            System.out.println("2. View Order with Highest Priority");
+            System.out.println("3. View All Orders Sorted by Priority");
+            System.out.println("4. Ship an Order");
+            System.out.println("5. Quit and Write to File");
+            System.out.println("6. Return to Main Menu");
+            System.out.print("Enter choice: ");
+            choice = readInt(input);
+
+            if (choice == 1) {
+                System.out.println("1. Search by order id");
+                System.out.println("2. Search by customer first and last name");
+                System.out.print("Enter search type: ");
+                int searchType = readInt(input);
+
+                if (searchType == 1) {
+                    System.out.print("Enter order id: ");
+                    int orderId = readInt(input);
+                    Order order = findOrderById(orderHeap, orderId);
+                    if (order == null) {
+                        System.out.println("Order not found.");
+                    } else {
+                        System.out.println(order);
+                    }
+                } else if (searchType == 2) {
+                    System.out.print("Enter first name: ");
+                    String first = input.nextLine();
+                    System.out.print("Enter last name: ");
+                    String last = input.nextLine();
+                    printOrdersForCustomer(orderHeap, first, last);
+                } else {
+                    System.out.println("Invalid search option.");
+                }
+            } else if (choice == 2) {
+                if (orderHeap.isEmpty()) {
+                    System.out.println("No unshipped orders in queue.");
+                } else {
+                    System.out.println("Highest priority order:");
+                    System.out.println(orderHeap.getMax());
+                }
+            } else if (choice == 3) {
+                if (orderHeap.isEmpty()) {
+                    System.out.println("No unshipped orders in queue.");
+                } else {
+                    ArrayList<Order> sorted = orderHeap.heapSortSnapshot();
+                    System.out.println("Orders sorted by priority:");
+                    for (int i = 0; i < sorted.size(); i++) {
+                        System.out.println((i + 1) + ". " + sorted.get(i));
+                    }
+                }
+            } else if (choice == 4) {
+                if (orderHeap.isEmpty()) {
+                    System.out.println("No orders available to ship.");
+                } else {
+                    Order shipped = orderHeap.extractMax();
+                    shipped.setShipped(true);
+
+                    Customer owner = shipped.getCustomer();
+                    if (owner != null) {
+                        owner.markOrderShipped(shipped.getOrderId());
+                    }
+
+                    System.out.println("Shipped order: " + shipped.getOrderId());
+                }
+            } else if (choice == 5) {
+                writeEmployeeSnapshot(orderHeap, customers);
+                System.out.println("Wrote employee snapshot to employee_orders_report.txt");
+                choice = 6;
+            } else if (choice == 6) {
+                System.out.println("Returning to main menu...");
+            } else {
+                System.out.println("Invalid choice.");
+            }
+        }
     }
 
-    /** managerInterface
-     * 
-     */
+    private static Order findOrderById(Heap<Order> orderHeap, int orderId) {
+        for (int i = 1; i <= orderHeap.getHeapSize(); i++) {
+            Order o = orderHeap.getElement(i);
+            if (o != null && o.getOrderId() == orderId) {
+                return o;
+            }
+        }
+        return null;
+    }
+
+    private static void printOrdersForCustomer(Heap<Order> orderHeap, String first, String last) {
+        boolean foundAny = false;
+        for (int i = 1; i <= orderHeap.getHeapSize(); i++) {
+            Order o = orderHeap.getElement(i);
+            if (o == null || o.getCustomer() == null) {
+                continue;
+            }
+
+            Customer c = o.getCustomer();
+            if (c.getFirstName().equalsIgnoreCase(first)
+                && c.getLastName().equalsIgnoreCase(last)) {
+                System.out.println(o);
+                foundAny = true;
+            }
+        }
+
+        if (!foundAny) {
+            System.out.println("No matching orders found for that customer.");
+        }
+    }
+
+
+    private static void writeEmployeeSnapshot(Heap<Order> orderHeap, HashTable<Customer> customers) {
+        try {
+            java.io.PrintWriter out = new java.io.PrintWriter("employee_orders_report.txt");
+            out.println("UNSHIPPED ORDERS (highest priority first)");
+            ArrayList<Order> sorted = orderHeap.heapSortSnapshot();
+            for (int i = 0; i < sorted.size(); i++) {
+                out.println(sorted.get(i));
+            }
+            out.println();
+            out.println("CUSTOMER COUNT: " + customers.getNumElements());
+            out.close();
+        } catch (java.io.IOException e) {
+            System.out.println("Error writing employee snapshot: " + e.getMessage());
+        }
+    }
+
+    /** managerInterface */
     public static void managerInterface() {
-
-        
+        // TODO: manager menu still pending
     }
-
-    
-    
-
-
-
 }
