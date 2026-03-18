@@ -5,20 +5,17 @@
 import java.util.Scanner;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
 
 
 public class Main {
     public static void main(String[] args) throws IOException {
         HashTable<Customer> customers = new HashTable<>(10);
-        Map<String, Customer> customerByUsername = new HashMap<>();
+        LinkedList<Customer> customerList = new LinkedList<>();
 
         HashTable<Employee> employees = new HashTable<>(10);
+        LinkedList<Employee> employeeList = new LinkedList<>();
         CatalogService catalog = new CatalogService();
         try {
             int loaded = catalog.loadFromCsv(Paths.get("pc_parts_products.csv"));
@@ -35,9 +32,11 @@ public class Main {
         Customer dummyCustomer = new Customer("Alicia", "Smith", "alicia@email.com", "1234", 
             "123 Main St", "San Jose", "CA", "95112");
         customers.add(dummyCustomer);
-        customerByUsername.put(dummyCustomer.getUsername(), dummyCustomer);
+        customerList.addLast(dummyCustomer);
 
-        employees.add(new Employee("Bobby", "Jones", "bobby@email.com", "abcd", true));
+        Employee dummyEmployee = new Employee("Bobby", "Jones", "bobby@email.com", "abcd", true);
+        employees.add(dummyEmployee);
+        employeeList.addLast(dummyEmployee);
 
         //seeding users_upload.txt file
         Scanner file = new Scanner(new File("users_upload.txt"));
@@ -66,7 +65,7 @@ public class Main {
             Customer c = new Customer(first, last, username, password, address, city, state, zip);
 
             customers.add(c);
-            customerByUsername.put(username, c);
+            customerList.addLast(c);
         } 
 
         //EMPLOYEE SCAN
@@ -90,6 +89,7 @@ public class Main {
             Employee e = new Employee(first, last, email, password, manager);
 
             employees.add(e);
+            employeeList.addLast(e);
         }
 
         //ORDER SCAN
@@ -118,7 +118,16 @@ public class Main {
                 skuScan.close();
             }
 
-            Customer customer = customerByUsername.get(username);
+            Customer customer = null;
+            customerList.positionIterator();
+            while (!customerList.offEnd()) {
+                Customer c = customerList.getIterator();
+                if (c != null && c.getUsername().equals(username)) {
+                    customer = c;
+                    break;
+                }
+                customerList.advanceIterator();
+            }
 
             Order order = new Order(orderId, customer, items, shippingSpeed);
 
@@ -150,9 +159,9 @@ public class Main {
             //print out files one for customer.txt, employee.txt, manager.txt or something
 
             if (choice == 1) { 
-                login(customers, employees, catalog, orderHeap, nextOrderId, input);
+                login(customers, customerList, employees, employeeList, catalog, orderHeap, nextOrderId, input);
             } else if (choice == 2) { //create an account 
-                createAccount(customers, input);
+                createAccount(customers, customerList, input);
             } else if (choice == 3) { //guest menu options
                 System.out.println("\nLogged in as Guest.");
                 guestInterface();
@@ -173,8 +182,16 @@ public class Main {
     /** login
      * 
      */
-    public static void login(HashTable<Customer> customers, HashTable<Employee> employees,
-                            CatalogService catalog, Heap<Order> orderHeap, int[] nextOrderId, Scanner input) {
+    public static void login(
+        HashTable<Customer> customers,
+        LinkedList<Customer> customerList,
+        HashTable<Employee> employees,
+        LinkedList<Employee> employeeList,
+        CatalogService catalog,
+        Heap<Order> orderHeap,
+        int[] nextOrderId,
+        Scanner input
+    ) {
 
         System.out.print("Enter username: ");
         String username = input.nextLine();
@@ -196,9 +213,9 @@ public class Main {
             System.out.println("Employee login successful!");
             System.out.println(foundEmployee);
             if (foundEmployee.getIsManager()) {
-                managerInterface(catalog, orderHeap, input);
+                managerInterface(catalog, orderHeap, customerList, employeeList, input);
             } else {
-                employeeInterface(catalog, orderHeap, input);
+                employeeInterface(catalog, orderHeap, customerList, employeeList, input);
             }
         } else {
             System.out.println("Invalid username or password.");
@@ -208,7 +225,7 @@ public class Main {
     /** createAccount
      * 
      */
-    public static void createAccount(HashTable<Customer> customerTable, Scanner input) {
+    public static void createAccount(HashTable<Customer> customerTable, LinkedList<Customer> customerList, Scanner input) {
 
         System.out.print("Enter Username: ");
         String username = input.nextLine();
@@ -242,6 +259,7 @@ public class Main {
         Customer newCustomer = new Customer(firstname, lastname, username, password, 
             address, city, state, zip);
         customerTable.add(newCustomer);
+        customerList.addLast(newCustomer);
 
         System.out.println("Account created successfully! You can now login.");
     }
@@ -258,17 +276,13 @@ public class Main {
     ) {
         int choice = -1;
 
-        while (choice != 9) {
+        while (choice != 5) {
             System.out.println("\n=== Customer Menu ===");
             System.out.println("1. Search for a product");
-            System.out.println("2. Find product by primary key");
-            System.out.println("3. Find product by secondary key");
-            System.out.println("4. List all products (primary key order)");
-            System.out.println("5. List all products (secondary key order)");
-            System.out.println("6. Place an order");
-            System.out.println("7. View purchases (all orders)");
-            System.out.println("8. View shipped / unshipped orders");
-            System.out.println("9. Quit and write to file(s)");
+            System.out.println("2. List database of products");
+            System.out.println("3. Place an order");
+            System.out.println("4. View purchases (shipped & unshipped)");
+            System.out.println("5. Quit and write to file(s)");
             System.out.print("Enter choice: ");
 
             choice = input.nextInt();
@@ -276,41 +290,20 @@ public class Main {
 
             switch (choice){
                 case 1:
-                    //searchForProduct(catalog, input);
+                    CatalogUI.searchForProduct(catalog, input);
                     break;
                 case 2:
-                    System.out.print("Enter SKU: ");
-                    String searchSku = input.nextLine().trim();
-                    PCPart found = catalog.searchByPrimaryKey(searchSku);
-                    if (found != null) System.out.println(found);
-                    else System.out.println("No product found with SKU: " + searchSku);
+                    CatalogUI.listDatabaseOfProducts(catalog, input);
                     break;
                 case 3:
-                    System.out.print("Enter product name: ");
-                    String searchName = input.nextLine().trim();
-                    System.out.print("Enter category (or press Enter for any): ");
-                    String searchCat = input.nextLine().trim();
-                    LinkedList<PCPart> searchResults = catalog.searchBySecondaryKey(searchName, searchCat);
-                    if (searchResults.getLength() == 0) System.out.println("No products found.");
-                    else System.out.println(searchResults);
+                    OrderService.placeOrder(currentCustomer, catalog, orderHeap, nextOrderId, input);
                     break;
                 case 4:
-                    //listAllProductsByPrimaryKey(catalog, input);
+                    // View purchases: show both shipped and unshipped orders
+                    currentCustomer.viewOrders();
                     break;
                 case 5:
-                    //listAllProductsBySecondaryKey(catalog, input);
-                    break;
-                case 6:
-                    placeOrder(currentCustomer, catalog, orderHeap, nextOrderId, input);
-                    break;
-                case 7:
-                    //viewPurchases(currentCustomer, input);
-                    break;
-                case 8:
-                    //viewShippedUnshippedOrders(currentCustomer, input);
-                    break;
-                case 9:
-
+                    PersistenceService.saveCustomerAndOrderInfo(currentCustomer);
                     System.out.println("Saving and returning to main menu...");
                     break;
                 default:
@@ -336,36 +329,7 @@ public class Main {
             // - Quit and Write to file(s) (update file(s) to reflect customer and order info changes) 
     }
 
-    /** Place an order: collect cart by SKU, shipping speed, then add to heap and customer unshipped. */
-    public static void placeOrder(
-        Customer currentCustomer,
-        CatalogService catalog,
-        Heap<Order> orderHeap,
-        int[] nextOrderId,
-        Scanner input
-    ) {
-        LinkedList<PCPart> cart = new LinkedList<>();
-        System.out.print("Enter SKU (Enter when done): ");
-        for (String sku = input.nextLine().trim(); !sku.isEmpty(); sku = input.nextLine().trim()) {
-            PCPart part = catalog.searchByPrimaryKey(sku);
-            if (part != null) cart.addLast(part);
-            else System.out.println("SKU not found: " + sku);
-            System.out.print("Next SKU (Enter when done): ");
-        }
-        if (cart.getLength() == 0) {
-            System.out.println("Cart empty. Order cancelled.");
-            return;
-        }
-        System.out.print("Shipping 1=Standard 2=Rush 3=Overnight: ");
-        int shippingSpeed = Math.max(1, Math.min(3, input.nextInt()));
-        input.nextLine();
-
-        int orderId = nextOrderId[0]++;
-        Order newOrder = new Order(orderId, currentCustomer, cart, shippingSpeed);
-        orderHeap.insert(newOrder);
-        currentCustomer.addOrder(newOrder);
-        System.out.println("Order placed. ID: " + orderId);
-    }
+    // Order and persistence helpers were moved into OrderService and PersistenceService.
 
     /** guestInterface
      * 
@@ -375,121 +339,25 @@ public class Main {
         
     }
 
-    /** Ship the top-priority order: remove from heap, mark shipped, move on customer's lists. */
-    public static void shipTopOrder(Heap<Order> orderHeap) {
-        if (orderHeap.isEmpty()) {
-            System.out.println("No orders to ship.");
-            return;
-        }
-        Order toShip = orderHeap.extractMax();
-        toShip.setShipped(true);
-
-        Customer customer = toShip.getCustomer();
-        if (customer != null) {
-            customer.markOrderShipped(toShip.getOrderId());
-        } else {
-            System.out.println("Warning: shipped order " + toShip.getOrderId()
-                               + " has no customer attached (heap only).");
-        }
-
-        System.out.println("Shipped: " + toShip);
-    }
-
+    // Order actions were moved into OrderService.
     /** employeeInterface
      *
      */
-    public static void employeeInterface(CatalogService catalog, Heap<Order> orderHeap, Scanner input) {
+    public static void employeeInterface(
+        CatalogService catalog,
+        Heap<Order> orderHeap,
+        LinkedList<Customer> customerList,
+        LinkedList<Employee> employeeList,
+        Scanner input
+    ) {
         int choice = -1;
-        while (choice != 6) {
+        while (choice != 5) {
             System.out.println("\n=== Employee Menu ===");
-            System.out.println("1. Search for an order (by order id)");
-            System.out.println("2. Search for an order (by customer first and last name)");
-            System.out.println("3. View order with highest priority");
-            System.out.println("4. View all orders sorted by priority");
-            System.out.println("5. Ship an order");
-            System.out.println("6. Quit and write to file(s)");
-            System.out.print("Enter choice: ");
-            choice = input.nextInt();
-            input.nextLine();
-
-            switch (choice) {
-                case 1:
-                    System.out.print("Enter order ID: ");
-                    int searchId = input.nextInt();
-                    input.nextLine();
-                    boolean foundById = false;
-                    for (int i = 1; i <= orderHeap.getHeapSize(); i++) {
-                        Order o = orderHeap.getElement(i);
-                        if (o.getOrderId() == searchId) {
-                            System.out.println(o);
-                            foundById = true;
-                            break;
-                        }
-                    }
-                    if (!foundById) System.out.println("No order found with ID: " + searchId);
-                    break;
-                case 2:
-                    System.out.print("Enter customer first name: ");
-                    String searchFirst = input.nextLine().trim();
-                    System.out.print("Enter customer last name: ");
-                    String searchLast = input.nextLine().trim();
-                    boolean foundByName = false;
-                    for (int i = 1; i <= orderHeap.getHeapSize(); i++) {
-                        Order o = orderHeap.getElement(i);
-                        Customer c = o.getCustomer();
-                        if (c != null
-                                && c.getFirstName().equalsIgnoreCase(searchFirst)
-                                && c.getLastName().equalsIgnoreCase(searchLast)) {
-                            System.out.println(o);
-                            foundByName = true;
-                        }
-                    }
-                    if (!foundByName) System.out.println("No orders found for: " + searchFirst + " " + searchLast);
-                    break;
-                case 3:
-                    if (orderHeap.isEmpty()) System.out.println("No orders in queue.");
-                    else System.out.println("Highest priority order:\n" + orderHeap.getMax());
-                    break;
-                case 4:
-                    if (orderHeap.isEmpty()) {
-                        System.out.println("No orders in queue.");
-                    } else {
-                        ArrayList<Order> sorted = orderHeap.heapSortSnapshot();
-                        System.out.println("\n=== All Orders by Priority (Highest to Lowest) ===");
-                        for (int i = 0; i < sorted.size(); i++) {
-                            System.out.println((i + 1) + ". " + sorted.get(i));
-                        }
-                    }
-                    break;
-                case 5:
-                    shipTopOrder(orderHeap);
-                    break;
-                case 6:
-                    System.out.println("Saving and returning to main menu...");
-                    break;
-                default:
-                    System.out.println("Invalid choice. Try again.");
-            }
-        }
-    }
-
-
-    /** managerInterface
-     * 
-     */
-    public static void managerInterface(CatalogService catalog, Heap<Order> orderHeap, Scanner input) {
-        int choice = -1;
-        while (choice != 6) {
-            System.out.println("\n=== Manager Menu ===");
-            System.out.println("1. Search for an order (by order id)");
-            System.out.println("2. Search for an order (by customer first and last name)");
-            System.out.println("3. View order with highest priority");
-            System.out.println("4. View all orders sorted by priority");
-            System.out.println("5. Ship an order");
-            System.out.println("6. Quit and write to file(s)");
-            System.out.println("7. Add new product");
-            System.out.println("8. Update existing product");
-            System.out.println("9. Remove product");
+            System.out.println("1. Search for an order");
+            System.out.println("2. View order with highest priority");
+            System.out.println("3. View all orders sorted by priority (Heap sort)");
+            System.out.println("4. Ship an order");
+            System.out.println("5. Quit and write to file(s)");
             System.out.print("Enter choice: ");
             choice = input.nextInt();
             input.nextLine();
@@ -508,19 +376,8 @@ public class Main {
                     // viewAllOrdersSortedByPriority(orderHeap);
                     break;
                 case 5:
-                    shipTopOrder(orderHeap);
-                    break;
-                case 6:
+                    PersistenceService.saveAllState(customerList, employeeList, catalog);
                     System.out.println("Saving and returning to main menu...");
-                    break;
-                case 7:
-                    // addProduct(catalog, input);
-                    break;
-                case 8:
-                    // updateProduct(catalog, input);
-                    break;
-                case 9:
-                    // removeProduct(catalog, input);
                     break;
                 default:
                     System.out.println("Invalid choice. Try again.");
@@ -528,9 +385,66 @@ public class Main {
         }
     }
 
-    
-    
 
+    /** managerInterface
+     * 
+     */
+    public static void managerInterface(
+        CatalogService catalog,
+        Heap<Order> orderHeap,
+        LinkedList<Customer> customerList,
+        LinkedList<Employee> employeeList,
+        Scanner input
+    ) {
+        int choice = -1;
+        while (choice != 6) {
+            System.out.println("\n=== Manager Menu ===");
+            System.out.println("1. Search for an order (by order id)");
+            System.out.println("2. Search for an order (by customer first and last name)");
+            System.out.println("3. View order with highest priority");
+            System.out.println("4. View all orders sorted by priority");
+            System.out.println("5. Ship an order");
+            System.out.println("6. Quit and write to file(s)");
+            System.out.println("7. Add new product");
+            System.out.println("8. Update existing product");
+            System.out.println("9. Remove product");
+            System.out.print("Enter choice: ");
+            choice = input.nextInt();
+            input.nextLine();
 
+            switch (choice) {
+                case 1:
+                    OrderService.viewOrderByOrderId(orderHeap, input);
+                    break;
+                case 2:
+                    OrderService.viewOrdersByCustomerName(orderHeap, input);
+                    break;
+                case 3:
+                    // OrderService.viewHighestPriorityOrder(orderHeap);
+                    break;
+                case 4:
+                    // OrderService.viewAllOrdersSortedByPriority(orderHeap);
+                    break;
+                case 5:
+                    OrderService.shipTopOrder(orderHeap);
+                    break;
+                case 6:
+                    PersistenceService.saveAllState(customerList, employeeList, catalog);
+                    System.out.println("Saving and returning to main menu...");
+                    break;
+                case 7:
+                    //addProduct(catalog, input);
+                    break;
+                case 8:
+                    //updateProduct(catalog, input);
+                    break;
+                case 9:
+                    //removeProduct(catalog, input);
+                    break;
+                default:
+                    System.out.println("Invalid choice. Try again.");
+            }
+        }
+    }
 
 }

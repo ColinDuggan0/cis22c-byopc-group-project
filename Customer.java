@@ -49,6 +49,22 @@ public class Customer extends User {
         return unshippedOrders;
     }
 
+    public String getAddress() {
+        return address;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public String getZip() {
+        return zip;
+    }
+
     /** Prints all orders for this customer with their shipping status. */
     public void viewOrders() {
         System.out.println("=== Orders for " + super.toString() + " ===");
