@@ -258,17 +258,13 @@ public class Main {
     ) {
         int choice = -1;
 
-        while (choice != 9) {
+        while (choice != 5) {
             System.out.println("\n=== Customer Menu ===");
             System.out.println("1. Search for a product");
-            System.out.println("2. Find product by primary key");
-            System.out.println("3. Find product by secondary key");
-            System.out.println("4. List all products (primary key order)");
-            System.out.println("5. List all products (secondary key order)");
-            System.out.println("6. Place an order");
-            System.out.println("7. View purchases (all orders)");
-            System.out.println("8. View shipped / unshipped orders");
-            System.out.println("9. Quit and write to file(s)");
+            System.out.println("2. List database of products");
+            System.out.println("3. Place an order");
+            System.out.println("4. View purchases (shipped & unshipped)");
+            System.out.println("5. Quit and write to file(s)");
             System.out.print("Enter choice: ");
 
             choice = input.nextInt();
@@ -276,41 +272,20 @@ public class Main {
 
             switch (choice){
                 case 1:
-                    //searchForProduct(catalog, input);
+                    CatalogUI.searchForProduct(catalog, input);
                     break;
                 case 2:
-                    System.out.print("Enter SKU: ");
-                    String searchSku = input.nextLine().trim();
-                    PCPart found = catalog.searchByPrimaryKey(searchSku);
-                    if (found != null) System.out.println(found);
-                    else System.out.println("No product found with SKU: " + searchSku);
+                    CatalogUI.listDatabaseOfProducts(catalog, input);
                     break;
                 case 3:
-                    System.out.print("Enter product name: ");
-                    String searchName = input.nextLine().trim();
-                    System.out.print("Enter category (or press Enter for any): ");
-                    String searchCat = input.nextLine().trim();
-                    LinkedList<PCPart> searchResults = catalog.searchBySecondaryKey(searchName, searchCat);
-                    if (searchResults.getLength() == 0) System.out.println("No products found.");
-                    else System.out.println(searchResults);
-                    break;
-                case 4:
-                    //listAllProductsByPrimaryKey(catalog, input);
-                    break;
-                case 5:
-                    //listAllProductsBySecondaryKey(catalog, input);
-                    break;
-                case 6:
                     placeOrder(currentCustomer, catalog, orderHeap, nextOrderId, input);
                     break;
-                case 7:
-                    //viewPurchases(currentCustomer, input);
+                case 4:
+                    // View purchases: show both shipped and unshipped orders
+                    currentCustomer.viewOrders();
                     break;
-                case 8:
-                    //viewShippedUnshippedOrders(currentCustomer, input);
-                    break;
-                case 9:
-
+                case 5:
+                    saveCustomerAndOrderInfo(currentCustomer, orderHeap);
                     System.out.println("Saving and returning to main menu...");
                     break;
                 default:
@@ -367,6 +342,92 @@ public class Main {
         System.out.println("Order placed. ID: " + orderId);
     }
 
+    /** Writes current customer info and their shipped/unshipped orders to a file (customer interface case 5). */
+    public static void saveCustomerAndOrderInfo(Customer currentCustomer, Heap<Order> orderHeap) {
+        String filename = "customer_" + currentCustomer.getUsername() + "_orders.txt";
+        try (PrintWriter out = new PrintWriter(new File(filename))) {
+            out.println(currentCustomer);
+            out.println("-- Unshipped --");
+            writeOrderList(out, currentCustomer.getUnshippedOrders());
+            out.println("-- Shipped --");
+            writeOrderList(out, currentCustomer.getShippedOrders());
+            System.out.println("Customer and order info written to " + filename);
+        } catch (Exception e) {
+            System.out.println("Error writing: " + e.getMessage());
+        }
+    }
+
+    private static void writeOrderList(PrintWriter out, LinkedList<Order> list) {
+        list.positionIterator();
+        while (!list.offEnd()) {
+            out.println(list.getIterator());
+            list.advanceIterator();
+        }
+    }
+
+    public static void viewOrdersByCustomerName(
+        Heap<Order> orderHeap,
+        Scanner input
+    ) {
+        System.out.print("Enter customer first name: ");
+        String first = input.nextLine().trim();
+    
+        System.out.print("Enter customer last name: ");
+        String last = input.nextLine().trim();
+    
+        boolean found = false;
+    
+        // Traverse all orders without mutating the heap
+        ArrayList<Order> allOrders = orderHeap.heapSortSnapshot();
+    
+        for (int i = 0; i < allOrders.size(); i++) {
+            // If your ArrayList is your custom one, it may not have getLength/get(i).
+            // If compilation fails, tell me the ArrayList API and I’ll adjust.
+            Order o = allOrders.get(i);
+    
+            Customer c = o.getCustomer();
+            if (c == null) continue;
+    
+            boolean firstMatch = c.getFirstName().equalsIgnoreCase(first);
+            boolean lastMatch = c.getLastName().equalsIgnoreCase(last);
+    
+            if (firstMatch && lastMatch) {
+                found = true;
+                System.out.println(o);
+            }
+        }
+    
+        if (!found) {
+            System.out.println("No orders found for " + first + " " + last + ".");
+        }
+    }
+
+    public static void viewOrderByOrderId(
+        Heap<Order> orderHeap,
+        Scanner input
+    ) {
+        System.out.print("Enter order id: ");
+        int id = input.nextInt();
+        input.nextLine();
+    
+        ArrayList<Order> allOrders = orderHeap.heapSortSnapshot();
+    
+        boolean found = false;
+    
+        for (int i = 0; i < allOrders.size(); i++) {
+            Order o = allOrders.get(i);
+            if (o.getOrderId() == id) {
+                found = true;
+                System.out.println(o);
+                break;
+            }
+        }
+    
+        if (!found) {
+            System.out.println("No order found with id " + id + ".");
+        }
+    }
+
     /** guestInterface
      * 
      */
@@ -395,6 +456,27 @@ public class Main {
         System.out.println("Shipped: " + toShip);
     }
 
+    public static void viewHighestPriorityOrder(Heap<Order> orderHeap) {
+        if (orderHeap.isEmpty()) {
+            System.out.println("No orders in the queue.");
+            return;
+        }
+        System.out.println("Highest priority order:");
+        System.out.println(orderHeap.getMax());
+    }
+
+    public static void viewAllOrdersSortedByPriority(Heap<Order> orderHeap) {
+        if (orderHeap.isEmpty()) {
+            System.out.println("No orders in the queue.");
+            return;
+        }
+
+        ArrayList<Order> sorted = orderHeap.heapSortSnapshot();
+        System.out.println("All orders sorted by priority (highest to lowest):");
+        for (int i = 0; i < sorted.size(); i++) {
+            System.out.println(sorted.get(i));
+        }
+    }
     /** employeeInterface
      * 
      */
@@ -414,16 +496,16 @@ public class Main {
 
             switch (choice) {
                 case 1:
-                    // searchByOrderId(...);
+                    viewOrderByOrderId(orderHeap, input);
                     break;
                 case 2:
-                    // searchByCustomerName(...);
+                    viewOrdersByCustomerName(orderHeap, input);
                     break;
                 case 3:
-                    // viewHighestPriorityOrder(orderHeap);
+                    //viewHighestPriorityOrder(orderHeap);
                     break;
                 case 4:
-                    // viewAllOrdersSortedByPriority(orderHeap);
+                    //viewAllOrdersSortedByPriority(orderHeap);
                     break;
                 case 5:
                     shipTopOrder(orderHeap);
@@ -460,16 +542,16 @@ public class Main {
 
             switch (choice) {
                 case 1:
-                    // searchByOrderId(...);
+                    viewOrderByOrderId(orderHeap, input);
                     break;
                 case 2:
-                    // searchByCustomerName(...);
+                    viewOrdersByCustomerName(orderHeap, input);
                     break;
                 case 3:
-                    // viewHighestPriorityOrder(orderHeap);
+                    //viewHighestPriorityOrder(orderHeap);
                     break;
                 case 4:
-                    // viewAllOrdersSortedByPriority(orderHeap);
+                    //viewAllOrdersSortedByPriority(orderHeap);
                     break;
                 case 5:
                     shipTopOrder(orderHeap);
@@ -478,23 +560,18 @@ public class Main {
                     System.out.println("Saving and returning to main menu...");
                     break;
                 case 7:
-                    // addProduct(catalog, input);
+                    //addProduct(catalog, input);
                     break;
                 case 8:
-                    // updateProduct(catalog, input);
+                    //updateProduct(catalog, input);
                     break;
                 case 9:
-                    // removeProduct(catalog, input);
+                    //removeProduct(catalog, input);
                     break;
                 default:
                     System.out.println("Invalid choice. Try again.");
             }
         }
     }
-
-    
-    
-
-
 
 }
