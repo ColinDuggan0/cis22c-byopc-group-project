@@ -102,7 +102,7 @@ public class PCPart {
    /* Prints nicely in menus / listings. */
    public String toString() {
       return sku + " | " + category + " | " + nameKey + " | $" + String.format("%.2f", price)
-            + " | Stock: " + inStock + " | " + specs;
+            + " | Stock: " + inStock + " | " + specs + "\n";
    }
 
    /* Equality based on SKU (handy if you ever compare parts directly). */
