@@ -28,15 +28,6 @@ public class Main {
 
 
         ///////////// USER LOGIN PRINT OUTS ////////////////
-        //dummy users for testing
-        // Customer dummyCustomer = new Customer("Alicia", "Smith", "alicia@email.com", "1234", 
-        //     "123 Main St", "San Jose", "CA", "95112");
-        // customers.add(dummyCustomer);
-        // customerList.addLast(dummyCustomer);
-
-        // Employee dummyEmployee = new Employee("Bobby", "Jones", "bobby@email.com", "abcd", true);
-        // employees.add(dummyEmployee);
-        // employeeList.addLast(dummyEmployee);
 
         //seeding users_upload.txt file
         Scanner file = new Scanner(new File("users_upload.txt"));
