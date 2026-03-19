@@ -1,4 +1,5 @@
 CUSTOMERS
+Alicia Smith alicia@email.com 1234 123_Main_St San_Jose CA 95112
 Alice Smith alice@email.com 1234 123_Main_St SanJose CA 95112
 Brian Lee brian@email.com pass1 22_Oak_Rd SanJose CA 95121
 Carla Gomez carla@email.com pass2 89_Pine_St SantaClara CA 95050
@@ -6,27 +7,37 @@ David Kim david@email.com pass3 44_Elm_St Sunnyvale CA 94087
 Emma Patel emma@email.com pass4 11_Maple_Ave Cupertino CA 95014
 
 EMPLOYEES
+Bobby Jones bobby@email.com abcd true
 Bob Jones bob@email.com abcd true
 Sarah Nguyen sarah@email.com emp1 false
 Kevin Wong kevin@email.com emp2 false
 
 ORDERS
-1 alice@email.com 3 1000 1001 1006
-2 alice@email.com 2 1002 1003
-3 alice@email.com 1 1004
 
-4 brian@email.com 2 1006 1007
-5 brian@email.com 1 1008
-6 brian@email.com 3 1000 1002
 
-7 carla@email.com 1 1003 1004
-8 carla@email.com 3 1006
-9 carla@email.com 2 1007 1008
+2 alice@email.com 2 false 1002 1003
+3 alice@email.com 1 false 1004
+10000 alice@email.com 1 false 1001 1002
 
-10 david@email.com 2 1000
-11 david@email.com 1 1001 1002
-12 david@email.com 3 1006 1007 1008
+1 alice@email.com 3 true 1000 1001 1006
 
-13 emma@email.com 1 1003
-14 emma@email.com 2 1004 1005
-15 emma@email.com 3 1006
+4 brian@email.com 2 false 1006 1007
+5 brian@email.com 1 false 1008
+6 brian@email.com 3 false 1000 1002
+
+
+7 carla@email.com 1 false 1003 1004
+9 carla@email.com 2 false 1007 1008
+
+8 carla@email.com 3 true 1006
+
+10 david@email.com 2 false 1000
+11 david@email.com 1 false 1001 1002
+12 david@email.com 3 false 1006 1007 1008
+
+
+13 emma@email.com 1 false 1003
+14 emma@email.com 2 false 1004 1005
+15 emma@email.com 3 false 1006
+
+
