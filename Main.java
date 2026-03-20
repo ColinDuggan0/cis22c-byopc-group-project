@@ -28,15 +28,7 @@ public class Main {
 
 
         ///////////// USER LOGIN PRINT OUTS ////////////////
-        //dummy users for testing
-        Customer dummyCustomer = new Customer("Alicia", "Smith", "alicia@email.com", "1234", 
-            "123 Main St", "San Jose", "CA", "95112");
-        customers.add(dummyCustomer);
-        customerList.addLast(dummyCustomer);
-
-        Employee dummyEmployee = new Employee("Bobby", "Jones", "bobby@email.com", "abcd", true);
-        employees.add(dummyEmployee);
-        employeeList.addLast(dummyEmployee);
+        
 
         //seeding users_upload.txt file
         Scanner file = new Scanner(new File("users_upload.txt"));
@@ -197,7 +189,7 @@ public class Main {
                 createAccount(customers, customerList, input);
             } else if (choice == 3) { //guest menu options
                 System.out.println("\nLogged in as Guest.");
-                guestInterface();
+                guestInterface(input, catalog);
                 
             } else if (choice == 4) {
                 System.out.println("Exiting program...");
@@ -346,23 +338,7 @@ public class Main {
                     System.out.println("Invalid choice. Try again.");
             }
         }
-        // - Search for a product
-            // - Find and display one record using the primary key (BST search - updated to return the value instead of a boolean)
-            // - Find and display one record using the secondary key (BST search - updated to return the value instead of a boolean)
-
-        // - List Database of Products
-            // - List data sorted by primary key (BST display)
-            // - List data sorted by secondary key (BST display)
-
-        // - Place an Order (add a new Order to the heap)
-            // - Overnight Shipping
-            // - Rush Shipping
-            // - Standard Shipping
-
-        // - View Purchases
-            // - View shipped orders (LinkedList display)
-            // - View unshipped orders (LinkedList display)
-            // - Quit and Write to file(s) (update file(s) to reflect customer and order info changes) 
+      
     }
 
     // Order and persistence helpers were moved into OrderService and PersistenceService.
@@ -370,9 +346,28 @@ public class Main {
     /** guestInterface
      * 
      */
-    public static void guestInterface() {
-        
-        
+    public static void guestInterface(Scanner input, CatalogService catalog) {
+        System.out.println("\n=== Guest Menu ===");
+        System.out.println("1. Search for a product");
+        System.out.println("2. List database of products");
+        System.out.println("3. Quit");
+        int choice = input.nextInt();
+        input.nextLine();
+
+        switch (choice){
+            case 1:
+                CatalogUI.searchForProduct(catalog, input);
+                break;
+            case 2:
+                CatalogUI.listDatabaseOfProducts(catalog, input);
+                break;
+            case 3:
+                System.out.println("Returning to main menu...");
+                break;
+            default:
+                System.out.println("Invalid choice. Try again.");
+        }
+
     }
 
     // Order actions were moved into OrderService.
